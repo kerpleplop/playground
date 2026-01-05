@@ -1,0 +1,3 @@
+# Reviewable settings file. Read the docs at https://docs.reviewable.io/repositories.html#store-repository-settings-using-the-reviewable-directory
+badge:
+  location: comment
