@@ -1,3 +1,5 @@
+// dependencies: lodash4
+
 # Reviewable settings file. Read the docs at https://docs.reviewable.io/repositories.html#store-repository-settings-using-the-reviewable-directory
 badge:
   location: comment
@@ -7,8 +9,6 @@ badge:
 // It checks that all files have been reviewed by at least one user and that all discussions have
 // been resolved.  All the information about the current review is supplied in a predefined `review`
 // variable.
-
-// dependencies: lodash4
 
 let reasons = [];  // pieces of the status description
 let shortReasons = [];  // pieces of the short status desc.
