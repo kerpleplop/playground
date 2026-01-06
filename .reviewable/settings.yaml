@@ -18,7 +18,7 @@ badge:
   # `commenter` is the author of the comment if `location` is `comment`.
   # Requires the repository to belong to an organization and the user specified as `commenter`
   # to be a member of that organization. Defaults to the repo connector or review visitor.
-  commenter: pkaminski
+  commenter: kerpleplop
   # `when` optionally allows you to specify when to inject the Reviewable badge into the pull request.
   #  Valid options include: `created` (default), `accessed`, `published` and `requested`.
   when: accessed
@@ -57,7 +57,7 @@ github-status:
   updates: always
   # `creator` is the username of the account used to post the status. The repository must belong to
   # an organization and the user be a member of that organization. Defaults to any repository admin.
-  creator: pkaminski
+  creator: kerpleplop
 
 # `coverage` lets you configure code coverage reports.
 # https://docs.reviewable.io/repositories.html#code-coverage
@@ -67,8 +67,8 @@ coverage:
   # `headers` allows specifying custom headers to include when sending requests fetching
   # code coverage reports. As this is mostly useful for authorizing access in private repos,
   # the header values can be encrypted via https://reviewable.io/encrypt.
-  headers:
-    Authorization: encrypted/rsa2:ObXundPmnmNRmJvPz20Y8+7egxnt5A3XjO5hSYxZGMNmFel2i5tNei8bZ/Uqd9WmcNNR37XodqyC7YR69h6PGQ==
+  # headers:
+  #   Authorization: encrypted/rsa2:ObXundPmnmNRmJvPz20Y8+7egxnt5A3XjO5hSYxZGMNmFel2i5tNei8bZ/Uqd9WmcNNR37XodqyC7YR69h6PGQ==
 
 # `completion-file` gives the path to the custom review completion condition script, relative to the
 # settings file.  The script _must_ be in `/.reviewable` or a subdirectory.
