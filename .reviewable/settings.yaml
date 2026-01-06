@@ -1,64 +1,95 @@
-// dependencies: lodash4
+# This example `settings.yaml` file contains all settings available
+# for configuring Reviewable. Options are subject to change.
+#
+# For more information about these options, see
+# https://docs.reviewable.io/repositories.html#repository-settings
+#
+# Below are top-level options for the current repository,
+# or all repositories in your organization when using the master
+# settings.yaml file. These settings can be modified for individual
+# repositories in the "overrides" section below.
 
-# Reviewable settings file. Read the docs at https://docs.reviewable.io/repositories.html#store-repository-settings-using-the-reviewable-directory
+# `badge` lets you control where and when Reviewable will add its badge to the pull request.
+# https://docs.reviewable.io/repositories.html#reviewable-badge
 badge:
-  location: comment
+  # `location` determines the location of the Reviewable badge in the pull request
+  # Valid options include: `description-bottom` (default), `description-top`, `comment` and `none`.
+  location: description-bottom
+  # `commenter` is the author of the comment if `location` is `comment`.
+  # Requires the repository to belong to an organization and the user specified as `commenter`
+  # to be a member of that organization. Defaults to the repo connector or review visitor.
+  commenter: pkaminski
+  # `when` optionally allows you to specify when to inject the Reviewable badge into the pull request.
+  #  Valid options include: `created` (default), `accessed`, `published` and `requested`.
+  when: accessed
 
-// This is the built-in review completion condition that Reviewable uses by default.
+# `default-review-style` allows you to choose how reviews are displayed.
+# Valid options include: `combined-commits` (default) and `one-per-commit`.
+# https://docs.reviewable.io/repositories.html#default-review-style
+default-review-style: one-per-commit
 
-// It checks that all files have been reviewed by at least one user and that all discussions have
-// been resolved.  All the information about the current review is supplied in a predefined `review`
-// variable.
+# `default-review-overlap-strategy` lets you determine the order in which reviews are conducted.
+# Valid options include: `user-default` (default), `unclaimed`, `unreviewed` and `personally-unreviewed`.
+# https://docs.reviewable.io/repositories.html#default-review-style
+default-review-overlap-strategy: unclaimed
 
-let reasons = [];  // pieces of the status description
-let shortReasons = [];  // pieces of the short status desc.
-const summary = review.summary;  // shortcut to review summary
-const pr = review.pullRequest;  // short to review pull request
+# `approval-text` will allow you to customize the text that is left as a comment when clicking the "Approve" button.
+# The default for this option is `:lgtm:`.
+# https://docs.reviewable.io/repositories.html#the-approval-button-output
+approval-text: ":lgtm:"
 
-// The commits file is a system file Reviewable synthesizes for reviewing commit messages.
-const commitsFileReviewed = summary.commitsFileReviewed;
-const numFiles = summary.numFiles;
-const numUnresolvedDiscussions = summary.numUnresolvedDiscussions;
-const numUnreviewedFiles = summary.numUnreviewedFiles;
+# `discussion-dismissal-restriction` determines who is able to dismiss participants from a discussion about a pull request.
+# Valid options include: `push` (default), `maintain`, or `admin`.
+# https://docs.reviewable.io/repositories.html#the-discussion-participant-dismissers
+discussion-dismissal-restriction: maintain
 
-const completed = !numUnresolvedDiscussions && !numUnreviewedFiles && commitsFileReviewed;
+# `merge` gives you control over the merge process exposed in Reviewable.
+merge:
+  # `mechanism` specifies how developers go about merging a pull request.
+  # Valid options include: `github` (default), `label:NAME` and `external`.
+  mechanism: github
 
-reasons.push(
-  (numUnreviewedFiles ? `${numFiles - numUnreviewedFiles} of ${numFiles}` : 'all') +
-  ' files reviewed');
-if (!numUnreviewedFiles && !commitsFileReviewed) reasons[0] += ' (commit messages unreviewed)'
-if (numUnreviewedFiles) shortReasons.push(plural(numUnreviewedFiles, 'file'));
+# `github-status` lets you control various aspects of Reviewable's pull request status on GitHub.
+# https://docs.reviewable.io/repositories.html#review-status-in-github-pr
+github-status:
+  # `updates` specifies when to start posting Reviewable's review completion status.
+  # Valid options include: `accessed` (default), `always`, or `never`.
+  updates: always
+  # `creator` is the username of the account used to post the status. The repository must belong to
+  # an organization and the user be a member of that organization. Defaults to any repository admin.
+  creator: pkaminski
 
-reasons.push(numUnresolvedDiscussions ?
-  plural(numUnresolvedDiscussions, 'unresolved discussion') : 'all discussions resolved');
-if (numUnresolvedDiscussions) shortReasons.push(plural(numUnresolvedDiscussions, 'discussion'));
+# `coverage` lets you configure code coverage reports.
+# https://docs.reviewable.io/repositories.html#code-coverage
+coverage:
+  # `url` allows you to specify a template for code coverage reports.
+  url: https://example.com/coverage
+  # `headers` allows specifying custom headers to include when sending requests fetching
+  # code coverage reports. As this is mostly useful for authorizing access in private repos,
+  # the header values can be encrypted via https://reviewable.io/encrypt.
+  headers:
+    Authorization: encrypted/rsa2:ObXundPmnmNRmJvPz20Y8+7egxnt5A3XjO5hSYxZGMNmFel2i5tNei8bZ/Uqd9WmcNNR37XodqyC7YR69h6PGQ==
 
-let shortDescription;
-if (completed) {
-  shortDescription = plural(numFiles, 'file') + ' reviewed';
-} else if (!numUnreviewedFiles && !numUnresolvedDiscussions && !commitsFileReviewed) {
-  shortDescription = 'commits unreviewed';
-} else {
-  shortDescription = shortReasons.join(', ') + ' left';
-}
+# `completion-file` gives the path to the custom review completion condition script, relative to the
+# settings file.  The script _must_ be in `/.reviewable` or a subdirectory.
+# https://docs.reviewable.io/repositories#completion-condition-script
+completion-file: completion.js
 
-const reviewStarted = !pr.draft && (
-  pr.requestedReviewers.length || pr.requestedTeams.length || pr.sanctions.length ||
-  pr.reviewers.length
-);
-const stage =
-  completed ? '3. Completed' :
-  reviewStarted ? '2. In progress' :
-  '1. Preparing';
-
-return {
-  completed,
-  description: reasons.join(', '),
-  shortDescription,
-  stage,
-  pendingReviewers: review.pendingReviewers
-};
-
-function plural(n, item) {
-  return `${n} ${item}${n === 1 ? '' : 's'}`;
-}
+# The overrides parameter will allow you to set different options for any
+# repositiory matching the patterns in the `repositories` parameter.
+# https://docs.reviewable.io/repositories.html#overrides
+overrides:
+  # `repositories` is a list of repositories that will apply the settings specified in the yaml file.
+  # The list of repositories may be a list of strings or `fnmatch` (glob) patterns.
+  - repositories:
+    - dev
+    - util-*
+    - vendor
+    # These settings will override corresponding settings earlier in this file for the repositories listed above, and can in turn be overridden by a local settings file in a target repository.
+    settings:
+      badge:
+        location: comment
+        when: published
+      default-review-style: combined-commits
+      default-review-overlap-strategy: user-default
+      discussion-dismissal-restriction: maintain
