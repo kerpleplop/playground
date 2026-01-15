@@ -56,6 +56,5 @@ if (numApprovals.false) {
 return {
   completed: numGranted >= numApprovalsRequired,
   description, shortDescription, pendingReviewers,
-  debug: approvals,
-  disableGitHubApprovals
+  debug: approvals
 };
