@@ -18,6 +18,7 @@ const numUnresolvedDiscussions = summary.numUnresolvedDiscussions;
 const numUnreviewedFiles = summary.numUnreviewedFiles;
 
 const completed = !numUnresolvedDiscussions && !numUnreviewedFiles && commitsFileReviewed;
+const disableGitHubApprovals = true;
 
 reasons.push(
   (numUnreviewedFiles ? `${numFiles - numUnreviewedFiles} of ${numFiles}` : 'all') +
