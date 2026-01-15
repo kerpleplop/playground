@@ -53,7 +53,8 @@ return {
   description: reasons.join(', '),
   shortDescription,
   stage,
-  pendingReviewers: review.pendingReviewers
+  pendingReviewers: review.pendingReviewers,
+  disableGitHubApprovals
 };
 
 function plural(n, item) {
