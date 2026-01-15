@@ -1,61 +1,58 @@
-// This is the built-in review completion condition that Reviewable uses by default.
-
-// It checks that all files have been reviewed by at least one user and that all discussions have
-// been resolved.  All the information about the current review is supplied in a predefined `review`
-// variable.
+// This code will check that the pull request has been approved via LGTM (Looks Good To Me) emojis
+// by a minimum number of reviewers and by all assignees.
+//
+// Approval is granted via the :lgtm: and :lgtm_strong: emojis, and can be withdrawn with
+// :lgtm_cancel:.  An :lgtm: is only good for the last non-provisional revision at the time the
+// comment is sent, so any new commits will require another approval.  An :lgtm_strong: is good for
+// all revisions unless canceled.
 
 // dependencies: lodash4
 
-let reasons = [];  // pieces of the status description
-let shortReasons = [];  // pieces of the short status desc.
-const summary = review.summary;  // shortcut to review summary
-const pr = review.pullRequest;  // short to review pull request
+// The number of LGTMs required to merge.
+let numApprovalsRequired = 1;
 
-// The commits file is a system file Reviewable synthesizes for reviewing commit messages.
-const commitsFileReviewed = summary.commitsFileReviewed;
-const numFiles = summary.numFiles;
-const numUnresolvedDiscussions = summary.numUnresolvedDiscussions;
-const numUnreviewedFiles = summary.numUnreviewedFiles;
+// Approval by username: true if current LGTM, false if stale, missing if not given or canceled.
+const approvals = {};
 
-const completed = !numUnresolvedDiscussions && !numUnreviewedFiles && commitsFileReviewed;
-const disableGitHubApprovals = true;
+// Timestamp of the currently latest revision.
+const lastRevisionTimestamp = _(review.revisions).reject('obsolete').last().snapshotTimestamp;
 
-reasons.push(
-  (numUnreviewedFiles ? `${numFiles - numUnreviewedFiles} of ${numFiles}` : 'all') +
-  ' files reviewed');
-if (!numUnreviewedFiles && !commitsFileReviewed) reasons[0] += ' (commit messages unreviewed)'
-if (numUnreviewedFiles) shortReasons.push(plural(numUnreviewedFiles, 'file'));
+_.forEach(review.sentiments, sentiment => {
+  const emojis = _.keyBy(sentiment.emojis);
+  if (emojis.lgtm_cancel) {
+    delete approvals[sentiment.username];
+  } else if (emojis.lgtm_strong) {
+    approvals[sentiment.username] = true;
+  } else if (emojis.lgtm && !approvals[sentiment.username]) {
+    approvals[sentiment.username] = sentiment.timestamp >= lastRevisionTimestamp;
+  }
+});
 
-reasons.push(numUnresolvedDiscussions ?
-  plural(numUnresolvedDiscussions, 'unresolved discussion') : 'all discussions resolved');
-if (numUnresolvedDiscussions) shortReasons.push(plural(numUnresolvedDiscussions, 'discussion'));
+const numApprovals = _.countBy(approvals);
+let numGranted = numApprovals.true || 0;
+let pendingReviewers = [];
 
-let shortDescription;
-if (completed) {
-  shortDescription = plural(numFiles, 'file') + ' reviewed';
-} else if (!numUnreviewedFiles && !numUnresolvedDiscussions && !commitsFileReviewed) {
-  shortDescription = 'commits unreviewed';
-} else {
-  shortDescription = shortReasons.join(', ') + ' left';
+const required = _.map(review.pullRequest.assignees, 'username');
+if (required.length) {
+  numApprovalsRequired = _.max([required.length, numApprovalsRequired]);
+  numGranted =
+    (_(approvals).pick(required).countBy().value().true || 0) +
+    _.min([numGranted, numApprovalsRequired - required.length]);
+  pendingReviewers = _(required)
+    .reject(username => approvals[username])
+    .map(username => ({username}))
+    .value();
 }
 
-const reviewStarted = !pr.draft && (
-  pr.requestedReviewers.length || pr.requestedTeams.length || pr.sanctions.length ||
-  pr.reviewers.length
-);
-const stage =
-  completed ? '3. Completed' :
-  reviewStarted ? '2. In progress' :
-  '1. Preparing';
+let description = `${numGranted} of ${numApprovalsRequired} LGTMs obtained`;
+let shortDescription = `${numGranted}/${numApprovalsRequired} LGTMs`;
+if (numApprovals.false) {
+  description += `, and ${numApprovals.false} stale`;
+  shortDescription += `, ${numApprovals.false} stale`;
+}
 
 return {
-  completed,
-  description: reasons.join(', '),
-  shortDescription,
-  stage,
-  pendingReviewers: review.pendingReviewers
+  completed: numGranted >= numApprovalsRequired,
+  description, shortDescription, pendingReviewers,
+  debug: approvals
 };
-
-function plural(n, item) {
-  return `${n} ${item}${n === 1 ? '' : 's'}`;
-}
